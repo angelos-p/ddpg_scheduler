@@ -6,6 +6,7 @@ from gym.spaces import Box
 class IoT_Simulation(object):
 
     def __init__(self, probabilities=[], devices=[], bandwidth_threshold=100000, device_threshold=10, hvft_apps=6, hvft_sizes=[]):
+        
         self.hvft_apps = hvft_apps
 
         self.action_space = Box(low=0, high=1440, dtype=np.int32, shape=(1, self.hvft_apps))
@@ -18,12 +19,12 @@ class IoT_Simulation(object):
         if hvft_sizes:
             self.hvft_sizes = hvft_sizes
         else:
-            self.hvft_sizes = [bandwidth_threshold * 0.4] * hvft_apps
+            self.hvft_sizes = [bandwidth_threshold * 0.3] * hvft_apps
 
         if probabilities:
             self.probs = probabilities
         else:
-            self.probs = [0.05] * 2 + [0.03] + [0.02] * 2 + [0.03]  + [0.05] + [0.08] * 4 + [0.1] * 2 + [0.15] * 5 + [0.1] * 2 + [0.08] * 4
+            self.probs = [(0.05, 0.7)] * 2 + [(0.03, 0.7)] + [(0.02, 0.7)] * 2 + [(0.03, 0.6)]  + [(0.05, 0.6)] + [(0.08, 0.5)] * 4 + [(0.1, 0.4)] * 2 + [(0.15, 0.4)] * 5 + [(0.1, 0.4)] * 2 + [(0.08, 0.5)] * 4
         
         if devices:
             self.devices = devices
@@ -49,7 +50,7 @@ class IoT_Simulation(object):
             prob = self.probs[i]
             for j in range(20):
                 for device in self.devices:
-                    if random.random() <= prob:
+                    if random.random() <= prob[0]:
                         for k in range(3):
                             bandwidth_timeseries[i * 60 + j*3 + k] += device
                             device_timeseries[i * 60 + j*3 + k] += 1
@@ -75,10 +76,11 @@ class IoT_Simulation(object):
         band_array = np.array(bandwidth_timeseries)
         device_array = np.array(device_timeseries)
 
-        band_reward = np.average(self.bandwidth_threshold - band_array)
-        device_reward = np.average(self.device_threshold - device_array)
+        band_reward = - np.average(np.maximum(band_array - self.bandwidth_threshold, 0))
+        device_reward = - np.average(np.maximum(device_array - self.device_threshold, 0))
 
-        reward = band_reward * 0.75 + device_reward * 0.25
+
+        reward = band_reward * 0.8 + device_reward * 0.2 * (self.bandwidth_threshold/self.device_threshold)
 
         self.update_state(band_array)
 

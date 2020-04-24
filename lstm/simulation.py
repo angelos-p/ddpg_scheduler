@@ -66,6 +66,8 @@ class IoT_Simulation(object):
     def step(self, action):
         
         bandwidth_timeseries, device_timeseries = self.generate_network_timeseries()
+        print(action)
+        print(self.state)
         for i in range(len(action[0])):
             timestamp = int(action[0][i])
             for j in range(60):
@@ -75,8 +77,8 @@ class IoT_Simulation(object):
         band_array = np.array(bandwidth_timeseries)
         device_array = np.array(device_timeseries)
 
-        band_reward = np.average(self.bandwidth_threshold - band_array)
-        device_reward = np.average(self.device_threshold - device_array)
+        band_reward = - np.average(np.maximum(band_array - self.bandwidth_threshold, 0))
+        device_reward = - np.average(np.maximum(device_array - self.device_threshold, 0))
 
         reward = band_reward * 0.75 + device_reward * 0.25
 
