@@ -21,17 +21,13 @@ class CriticNetwork(object):
         self.h_size = 300 
         
         # Create the critic network
-        self.inputs, self.action, self.out  = self.create_critic_network('critic')
-
+        self.inputs, self.action, self.out  = self.create_critic_network()
         self.network_params = tf.trainable_variables()[num_actor_vars:]
 
         # Target Network
-        self.target_inputs, self.target_action, self.target_out = self.create_critic_network('critic_target')
+        self.target_inputs, self.target_action, self.target_out = self.create_critic_network()
 
         self.target_network_params = tf.trainable_variables()[(len(self.network_params) + num_actor_vars):]
-
-        # Op for periodically updating target network with online network
-        # weights with regularization
         self.update_target_network_params = \
             [self.target_network_params[i].assign(tf.multiply(self.network_params[i], self.tau) + tf.multiply(self.target_network_params[i], 1. - self.tau))
                 for i in range(len(self.target_network_params))]
@@ -45,7 +41,7 @@ class CriticNetwork(object):
             self.optimize = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
             self.action_grads = tf.gradients(self.out, self.action)
 
-    def create_critic_network(self,scope):
+    def create_critic_network(self):
         with tf.device(self.device):
             # weights initialization
             w1_initial = np.random.normal(size=(self.s_dim,400)).astype(np.float32)
@@ -100,9 +96,6 @@ class CriticNetwork(object):
             out  = tf.matmul(l2,w3)+b3 # linear activation
             self.saver = tf.train.Saver()
         return inputs, action, out
-
-    
-
       
     def train(self, inputs, action, predicted_q_value):
         return self.sess.run([self.out, self.optimize], feed_dict={
@@ -131,14 +124,4 @@ class CriticNetwork(object):
 
     def update_target_network(self):
         self.sess.run(self.update_target_network_params)
-    
-    def save_critic(self):
-        self.saver.save(self.sess,'./critic_model.ckpt')
-        #saver.save(self.sess,'actor_model.ckpt')
-        print("Model saved in file:")
-
-    
-    def recover_critic(self):
-        self.saver.restore(self.sess,'./critic_model.ckpt')
-        #saver.restore(self.sess,'critic_model.ckpt')
     

@@ -1,14 +1,16 @@
 import numpy as np
 import random
 
+import matplotlib.pyplot as plt
+
 from gym.spaces import Box
 
 class IoT_Simulation(object):
 
-    def __init__(self, probabilities=[], devices=[], bandwidth_threshold=100000, device_threshold=10, hvft_apps=6, hvft_sizes=[]):
+    def __init__(self, probabilities=[], devices_traffic=[], bandwidth_threshold=120000, device_threshold=15, hvft_apps=6, hvft_sizes=[], hvft_size_fraction=0.25, epoch_size=100):
         
         self.hvft_apps = hvft_apps
-
+        self.epoch_size = 100
         self.action_space = Box(low=0, high=1440, dtype=np.int32, shape=(1, self.hvft_apps))
         self.observation_space = Box(low=0, high=np.inf, dtype=np.int32, shape=(1, 1440))
 
@@ -19,17 +21,20 @@ class IoT_Simulation(object):
         if hvft_sizes:
             self.hvft_sizes = hvft_sizes
         else:
-            self.hvft_sizes = [bandwidth_threshold * 0.3] * hvft_apps
+            self.hvft_sizes = [bandwidth_threshold * hvft_size_fraction] * hvft_apps
 
+        # Probabilities (D_on, D_off)
         if probabilities:
             self.probs = probabilities
         else:
-            self.probs = [(0.05, 0.7)] * 2 + [(0.03, 0.7)] + [(0.02, 0.7)] * 2 + [(0.03, 0.6)]  + [(0.05, 0.6)] + [(0.08, 0.5)] * 4 + [(0.1, 0.4)] * 2 + [(0.15, 0.4)] * 5 + [(0.1, 0.4)] * 2 + [(0.08, 0.5)] * 4
+            self.probs = [(0.1, 0.9)] * 2 + [(0.1, 0.9)] + [(0.07, 0.9)] * 2 + [(0.05, 0.9)]  + [(0.07, 0.9)] + [(0.1, 0.8)] * 4 + [(0.2, 0.8)] * 2 + [(0.3, 0.8)] * 5 + [(0.2, 0.8)] * 2 + [(0.15, 0.8)] * 4
         
-        if devices:
-            self.devices = devices
+        if devices_traffic:
+            self.devices_traffic = devices_traffic
         else:
-            self.devices = [10000, 5000, 3000, 6000, 1000, 500, 2000, 20000, 600, 1500, 3000, 1200, 12000, 20000, 10000, 3000, 2000, 9000, 100, 200]
+            self.devices_traffic = [10000, 5000, 3000, 6000, 1000, 5000, 2000, 20000, 6000, 1500, 3000, 1200, 12000, 20000, 10000, 3000, 2000, 9000, 1000, 2000]
+        
+        self.device_on = [False] * len(self.devices_traffic)
         
         self.bandwidth_threshold = bandwidth_threshold
         self.device_threshold = device_threshold
@@ -40,6 +45,7 @@ class IoT_Simulation(object):
 
     def reset(self):
         self.state, _ = self.generate_network_timeseries()
+        self.episodes = 0
         return self.state
 
     def generate_network_timeseries(self):
@@ -49,19 +55,25 @@ class IoT_Simulation(object):
         for i in range(24):
             prob = self.probs[i]
             for j in range(20):
-                for device in self.devices:
-                    if random.random() <= prob[0]:
-                        for k in range(3):
-                            bandwidth_timeseries[i * 60 + j*3 + k] += device
-                            device_timeseries[i * 60 + j*3 + k] += 1
+                for d in range(len(self.devices_traffic)):
+                    if self.device_on[d]:
+                        if random.random() > prob[1]:
+                            for k in range(3):
+                                bandwidth_timeseries[i * 60 + j*3 + k] += self.devices_traffic[d]
+                                device_timeseries[i * 60 + j*3 + k] += 1
+                        else:
+                            self.device_on[d] = False
+                    else:
+                        if random.random() < prob[0]:
+                            self.device_on[d] = True
+                            for k in range(3):
+                                bandwidth_timeseries[i * 60 + j*3 + k] += self.devices_traffic[d]
+                                device_timeseries[i * 60 + j*3 + k] += 1 
         
         return bandwidth_timeseries, device_timeseries
 
     
     def update_state(self, new_series):
-        # for i in range(len(self.state)-1, 1):
-        #     self.state[i] = self.state[i-1]
-        # self.state[0] = new_series
         self.state = np.array(new_series)
     
     def step(self, action):
@@ -86,11 +98,9 @@ class IoT_Simulation(object):
 
         self.episodes += 1
 
-        if self.episodes > 100:
+        if self.episodes > self.epoch_size:
             done = True
         else:
             done = False
 
         return self.state, reward, done
-        
-    

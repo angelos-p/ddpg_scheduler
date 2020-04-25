@@ -6,9 +6,6 @@ import pickle
 class ReplayBuffer(object):
 
     def __init__(self, buffer_size, random_seed=123):
-        """
-        The right side of the deque contains the most recent experiences 
-        """
         self.buffer_size = buffer_size
         self.count = 0
         self.buffer = deque()
@@ -41,27 +38,3 @@ class ReplayBuffer(object):
         s2_batch = np.array([_[4] for _ in batch])
 
         return s_batch, a_batch, r_batch, t_batch, s2_batch
-
-    def clear(self):
-        self.deque.clear()
-        self.count = 0
-
-    def save(self):
-        print('saving the replay buffer')
-        print('.')
-        file = open('replay_buffer.obj', 'wb')
-        print('..')
-        pickle.dump(self.buffer, file)
-        print('...')
-        print('the replay buffer was saved succesfully')
-
-    def load(self):
-          
-        try:
-            filehandler = open('replay_buffer.obj', 'rb') 
-            self.buffer = pickle.load(filehandler)
-            self.count = len(self.buffer)
-            print('the replay buffer was loaded succesfully')
-        except: 
-            print('there was no file to load')
-
