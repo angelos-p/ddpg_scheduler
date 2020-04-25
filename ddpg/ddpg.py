@@ -18,9 +18,8 @@ CRITIC_LEARNING_RATE =  0.001
 # Soft target update param
 TAU = 0.001
 
-# Gym environment
 RANDOM_SEED = 1234
-EXPLORE = 70
+EXPLORE = 60
 DEVICE = '/cpu:0'
 
 class DDPG_Trainer:
@@ -44,13 +43,11 @@ class DDPG_Trainer:
             actor = ActorNetwork(sess, state_dim, action_dim, action_bound, ACTOR_LEARNING_RATE, TAU, DEVICE)
             critic = CriticNetwork(sess, state_dim, action_dim, CRITIC_LEARNING_RATE, TAU, actor.get_num_trainable_vars(), DEVICE)
 
-
             sess.run(tf.global_variables_initializer())
             
             # Initialize target network weights
             actor.update_target_network()
             critic.update_target_network()
-            
             
             # Initialize replay memory
             replay_buffer = ReplayBuffer(BUFFER_SIZE, RANDOM_SEED)
@@ -121,5 +118,4 @@ class DDPG_Trainer:
                 if np.average(rewards[-10:]) > -200:
                     print(f"Number of steps: {step + i*100}")
                     return rewards
-        print("Unable to converge")
         return rewards

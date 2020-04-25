@@ -7,7 +7,7 @@ from gym.spaces import Box
 
 class IoT_Simulation(object):
 
-    def __init__(self, probabilities=[], devices_traffic=[], bandwidth_threshold=120000, device_threshold=15, hvft_apps=6, hvft_sizes=[], hvft_size_fraction=0.25, epoch_size=100):
+    def __init__(self, probabilities=[], devices_traffic=[], bandwidth_threshold=1200000, device_threshold=15, hvft_apps=6, hvft_sizes=[], hvft_size_fraction=0.25, epoch_size=100):
         
         self.hvft_apps = hvft_apps
         self.epoch_size = 100
@@ -32,7 +32,7 @@ class IoT_Simulation(object):
         if devices_traffic:
             self.devices_traffic = devices_traffic
         else:
-            self.devices_traffic = [10000, 5000, 3000, 6000, 1000, 5000, 2000, 20000, 6000, 1500, 3000, 1200, 12000, 20000, 10000, 3000, 2000, 9000, 1000, 2000]
+            self.devices_traffic = [100000, 50000, 30000, 60000, 10000, 50000, 20000, 200000, 60000, 15000, 30000, 12000, 120000, 200000, 100000, 30000, 20000, 90000, 10000, 20000]
         
         self.device_on = [False] * len(self.devices_traffic)
         
