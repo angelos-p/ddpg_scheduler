@@ -1,0 +1,6 @@
+tensorflow
+numpy
+pickle
+matplotlib
+gym
+scipy
